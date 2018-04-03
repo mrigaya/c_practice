@@ -43,20 +43,10 @@ int compare_string_with_wildcard(char *pattern1, char *pattern2) {
 	*(pattern1_tmp + (p1_index)) = '\0';
 	*(pattern2_tmp + (p2_index)) = '\0';
 
-	printf("p1_index is %d and p2_index is %d\n", p1_index,p2_index);
-
-	printf("p1_split_second is %s and p2_split_second is %s\n",p1_split_first, p2_split_second );
-
-
-
-	printf("pattern1 is %s and pattern1_tmp is %s\n",pattern1, pattern1_tmp);
-	printf("pattern2 is %s and pattern2_tmp is %s\n",pattern2, pattern2_tmp);
-
 	while ((*pattern1_tmp != '\0') && (*pattern2_tmp != '\0')) {
 		if (*pattern1_tmp == *pattern2_tmp) {
-			++pattern1_tmp;
-			++pattern2_tmp;
-			continue;
+			pattern1_tmp++;
+			pattern2_tmp++;
 		}
 		else if (*pattern1_tmp == '*') {
 			if(*(++pattern1_tmp) == '.') {
@@ -73,9 +63,6 @@ int compare_string_with_wildcard(char *pattern1, char *pattern2) {
 						return 1 && cmp_result_second;
 					}
 				}
-				
-				continue;
-				printf ("pattern2_tmp is %s\n",pattern2_tmp);
 			}
 
 			else {
@@ -86,28 +73,19 @@ int compare_string_with_wildcard(char *pattern1, char *pattern2) {
 				while (*(pattern2_tmp+p1_index) != '.'){
 					pattern2_tmp++;
 				}
-				//printf("Before while:p1_index is %d\n",p1_index);
-				//printf ("Before while:pattern1_tmp is %s\n",pattern1_tmp);
+
 				while (p1_index) {
 
 					if ((*pattern1_tmp != *pattern2_tmp )) {
 						return 0;
 					}
-
-					else {
-						//printf ("pattern1_tmp is ... %s\n",pattern1_tmp);
-						//printf ("pattern2_tmp is ... %s\n",pattern2_tmp);
-						pattern1_tmp++;
-						pattern2_tmp++;
-						p1_index -= 1;
-					}
+					pattern1_tmp++;
+					pattern2_tmp++;
+					p1_index -= 1;
 				}
-
 			}
 			split_count += 1;
-
 		}
-
 		else if (*pattern2_tmp == '*') {
 			printf("split_count  is %d\n",split_count );
 			if(*(++pattern2_tmp) == '.') {
@@ -115,22 +93,17 @@ int compare_string_with_wildcard(char *pattern1, char *pattern2) {
 				if (split_count == 0) {
 					p1_index = p1_split_first - pattern1_tmp;
 					pattern1_tmp += p1_index;
-					
 					++pattern2_tmp;
 					
 				}
 				else {
 					p1_index = p1_split_second - pattern1_tmp;
 					pattern1_tmp += p1_index;
-					printf("String:pattern1_tmp is %s\n", pattern1_tmp);
 					if (*pattern1_tmp == '\0') {
 						return 1 && cmp_result_second;
 					}
 				}
-				
-				printf ("pattern2_tmp is %s\n",pattern2_tmp);
-				continue;
-				
+		
 			}
 
 			else {
@@ -141,48 +114,31 @@ int compare_string_with_wildcard(char *pattern1, char *pattern2) {
 				while (*(pattern1_tmp+p2_index) != '.'){
 					pattern1_tmp++;
 				}
-				printf("Before while:p2_index is %d\n",p2_index);
-				printf ("Before while:pattern2_tmp is %s\n",pattern2_tmp);
+
 				while (p2_index) {
 
 					if ((*pattern2_tmp != *pattern1_tmp )) {
 						return 0;
 					}
-
-					else {
-						printf ("pattern1_tmp is ... %s\n",pattern1_tmp);
-						printf ("pattern2_tmp is ... %s\n",pattern2_tmp);
-						pattern1_tmp++;
-						pattern2_tmp++;
-						p2_index -= 1;
-					}
+					pattern1_tmp++;
+					pattern2_tmp++;
+					p2_index -= 1;
 				}
-
-				printf ("After while:pattern2_tmp is %s\n",pattern2_tmp);
-				printf ("After while:pattern1_tmp is %s\n",pattern1_tmp);
-
-				
+			
 			}
 			split_count += 1;
-			//pattern1_tmp++;
-			//pattern2_tmp++;
-			//continue;
-		}
 
+		}
 		else if (*pattern1_tmp != *pattern2_tmp) {
 				return 0;
 		}
 	}
 
-printf ("pattern1_tmp is ... %s\n",pattern1_tmp);
-printf ("pattern2_tmp is ... %s\n",pattern2_tmp);
 	if ((*pattern1_tmp == '\0') && (*pattern2_tmp == '\0') ) {
 		if(cmp_result_second){
 			return 1;
 		}
-		else {
-			return 0;
-		}
+		return 0;
 	}
 	else {
 		return 0;
@@ -191,7 +147,7 @@ printf ("pattern2_tmp is ... %s\n",pattern2_tmp);
 
 int main() {
 	char pattern[128] = "smaa.*st.test.com";
-	char hostname[128] = "*smaa.*.test.com";
+	char hostname[128] = "*smaa.st.test.com";
 	char delimeter[2] = ".";
 
 
