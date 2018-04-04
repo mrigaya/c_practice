@@ -2,34 +2,48 @@
 #include <string.h>
 #include <stdlib.h>
 
-int compare_string_no_wildcard(char *pattern1, char *pattern2) {
-	while (*pattern1 != '\0' && *pattern2 != '\0') {
-		if( *pattern1 != *pattern2){
-			return 0;
-		}
-		pattern1++;
-		pattern2++;
-	}
-	return 1;
+char to_lower(char ch)
+{
+  if(ch >= 'A' && ch <= 'Z')
+    return (char)('a' + ch - 'A');
+  return ch;
 }
 
-int compare_string_with_wildcard(char *pattern1, char *pattern2) {
+int compare_string_no_wildcard(char *pattern, char *hostname) {
+	while (*pattern != '\0' && *hostname != '\0') {
+		if( to_lower(*pattern) != to_lower(*hostname) ){
+			return 0;
+		}
+		pattern++;
+		hostname++;
+	}
+	if (*pattern == '\0' && *hostname == '\0') {
+		return 1;
+	}
+	return 0;
+}
+
+int compare_string_with_wildcard(char *pattern, char *hostname) {
 	int cmp_result_first = 0;
 	int cmp_result_second = 0;
-	static int split_count = 0;
+	int split_count = 0;
 
-	char *pattern1_tmp = strdup(pattern1);
-	char *pattern2_tmp = strdup(pattern2);
+	char *pattern_tmp = strdup(pattern);
+	char *hostname_tmp = strdup(hostname);
 
-	char *p1_split_first = strchr(pattern1_tmp,'.');
-	char *p1_split_second = strchr(++p1_split_first, '.');
+	/* Get string after two dots (.) for comparison (without wildcard)
+	/* as to long wildcard is not supported */
+	char *p_split_first = strchr(pattern_tmp, '.');
+	char *p_split_second = strchr(++p_split_first, '.');
 
-	char *p2_split_first = strchr(pattern2_tmp,'.');
-	char *p2_split_second = strchr(++p2_split_first, '.');
+	char *h_split_first = strchr(hostname_tmp,'.');
+	char *h_split_second = strchr(++h_split_first, '.');
 
-	if (p1_split_second && p2_split_second) {
-		cmp_result_second = compare_string_no_wildcard(++p1_split_second, ++p2_split_second);
-		printf("cmp_result_second %d\n", cmp_result_second);
+	if (p_split_second && h_split_second) {
+		cmp_result_second = compare_string_no_wildcard(++p_split_second, ++h_split_second);
+		if (!cmp_result_second){
+			return 0;
+		}
 	}
 
 	else {
@@ -37,108 +51,72 @@ int compare_string_with_wildcard(char *pattern1, char *pattern2) {
 		return 0;
 	}
 
-	int p1_index = p1_split_second - pattern1_tmp;
-	int p2_index = p2_split_second - pattern2_tmp;
+	/* Get string till two dots (.) for wild card comparison */
+	int p_index = p_split_second - pattern_tmp;
+	int h_index = h_split_second - hostname_tmp;
 
-	*(pattern1_tmp + (p1_index)) = '\0';
-	*(pattern2_tmp + (p2_index)) = '\0';
+	*(pattern_tmp + (p_index)) = '\0';
+	*(hostname_tmp + (h_index)) = '\0';
 
-	while ((*pattern1_tmp != '\0') && (*pattern2_tmp != '\0')) {
-		if (*pattern1_tmp == *pattern2_tmp) {
-			pattern1_tmp++;
-			pattern2_tmp++;
+	while ((*pattern_tmp != '\0') && (*hostname_tmp != '\0')) {
+		/* Continue reading if both the charecters are same */
+		if ( to_lower(*pattern_tmp) == to_lower(*hostname_tmp)) {
+			pattern_tmp++;
+			hostname_tmp++;
 		}
-		else if (*pattern1_tmp == '*') {
-			if(*(++pattern1_tmp) == '.') {
-				//++pattern1_tmp;
-				if (split_count == 0) {
-					p2_index = p2_split_first - pattern2_tmp;
-					pattern2_tmp += p2_index;
-					
-				}
-				else {
-					p2_index = p2_split_second - pattern2_tmp;
-					pattern2_tmp += p2_index;
-					if (*pattern2_tmp == '\0') {
-						return 1 && cmp_result_second;
-					}
-				}
-			}
-
-			else {
-				
-				char *p1_part = strchr(pattern1_tmp, '.');
-				p1_index = p1_part - pattern1_tmp;
-				//char p1_cmp_string[p1_index] = {'\0'};
-				while (*(pattern2_tmp+p1_index) != '.'){
-					pattern2_tmp++;
-				}
-
-				while (p1_index) {
-
-					if ((*pattern1_tmp != *pattern2_tmp )) {
-						return 0;
-					}
-					pattern1_tmp++;
-					pattern2_tmp++;
-					p1_index -= 1;
-				}
-			}
-			split_count += 1;
-		}
-		else if (*pattern2_tmp == '*') {
-			printf("split_count  is %d\n",split_count );
-			if(*(++pattern2_tmp) == '.') {
-				
-				if (split_count == 0) {
-					p1_index = p1_split_first - pattern1_tmp;
-					pattern1_tmp += p1_index;
-					++pattern2_tmp;
-					
-				}
-				else {
-					p1_index = p1_split_second - pattern1_tmp;
-					pattern1_tmp += p1_index;
-					if (*pattern1_tmp == '\0') {
-						return 1 && cmp_result_second;
-					}
-				}
 		
+		/* check if hostname contains wildcard */
+		else if (*hostname_tmp == '*') {
+
+			if(*(++hostname_tmp) == '.') {
+				/* If hostname contains only * in first octet then skip all charecters in pattern
+				/* Then do comparison of next octet*/
+				if (split_count == 0) {
+ 					p_index = p_split_first - pattern_tmp;
+ 					pattern_tmp += p_index;
+ 					++hostname_tmp;
+ 				}
+ 				else {
+ 					p_index = p_split_second - pattern_tmp;
+ 					pattern_tmp += p_index;
+ 					if (*pattern_tmp == '\0') {
+ 						return 1;
+ 					}
+				}
 			}
 
 			else {
-				
-				char *p2_part = strchr(pattern2_tmp, '.');
-				p2_index = p2_part - pattern2_tmp;
-				//char p1_cmp_string[p1_index] = {'\0'};
-				while (*(pattern1_tmp+p2_index) != '.'){
-					pattern1_tmp++;
+				/* Will support partial wildcard comparison */
+				char *h_part = strchr(hostname_tmp, '.');
+				h_index = h_part - hostname_tmp;
+
+				/* Skip all charecters in pattern and compare the charecters remained after '*' in hostname string */
+				while (*(pattern_tmp + h_index) != '.'){
+					pattern_tmp++;
 				}
 
-				while (p2_index) {
+				while (h_index) {
 
-					if ((*pattern2_tmp != *pattern1_tmp )) {
+					if ( to_lower(*hostname_tmp) != to_lower(*pattern_tmp) ) {
 						return 0;
 					}
-					pattern1_tmp++;
-					pattern2_tmp++;
-					p2_index -= 1;
+					pattern_tmp++;
+					hostname_tmp++;
+					h_index -= 1;
 				}
 			
 			}
-			split_count += 1;
-
+			/* After first octet comparison make this on, so that wildcard comparison for next octet will get rejected */
+			split_count = 1;
 		}
-		else if (*pattern1_tmp != *pattern2_tmp) {
+		else if ( to_lower(*pattern_tmp) != to_lower(*hostname_tmp) ) {
 				return 0;
 		}
 	}
 
-	if ((*pattern1_tmp == '\0') && (*pattern2_tmp == '\0') ) {
-		if(cmp_result_second){
+	/* Outside while, check whether we have traversed both the strings completely or not */ 
+	if ((*pattern_tmp == '\0') && (*hostname_tmp == '\0') ) {
 			return 1;
-		}
-		return 0;
 	}
 	else {
 		return 0;
@@ -146,10 +124,8 @@ int compare_string_with_wildcard(char *pattern1, char *pattern2) {
 }
 
 int main() {
-	char pattern[128] = "smaa.*st.test.com";
-	char hostname[128] = "*smaa.st.test.com";
-	char delimeter[2] = ".";
-
+	char pattern[128] = "xxxwww.EXAMPle.test.com";
+	char hostname[128] = "*.*l.test.com";
 
 	if(compare_string_with_wildcard(pattern,hostname)){
 		printf("String Matched\n");
@@ -159,5 +135,6 @@ int main() {
 		printf("Both the Strings are not Same\n");
 		printf("String comparison is FAILED.\n");
 	}
+
 	return 0;
 }
