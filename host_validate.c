@@ -36,8 +36,13 @@ int compare_string_with_wildcard(char *pattern, char *hostname) {
 	char *p_split_first = strchr(pattern_tmp, '.');
 	char *p_split_second = strchr(++p_split_first, '.');
 
-	char *h_split_first = strchr(hostname_tmp,'.');
-	char *h_split_second = strchr(++h_split_first, '.');
+	if (p_split_first != NULL && h_split_first != NULL) {
+		p_split_second = strchr(++p_split_first, '.');
+		h_split_second = strchr(++h_split_first, '.');
+	}
+	else {
+		return 0;
+	}
 
 	if (p_split_second && h_split_second) {
 		cmp_result_second = compare_string_no_wildcard(++p_split_second, ++h_split_second);
